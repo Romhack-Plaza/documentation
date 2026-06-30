@@ -20,7 +20,7 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
+  url: 'https://documentation.romhackplaza.org',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -29,6 +29,7 @@ const config = {
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'Romhack-Plaza', // Usually your GitHub org/user name.
   projectName: 'documentation', // Usually your repo name.
+  trailingSlash: false,
 
   onBrokenLinks: 'throw',
 
