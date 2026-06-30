@@ -1,0 +1,8 @@
+{
+  "label": "Moderation",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Learn about warnings and other moderation actions."
+  }
+}

@@ -1,0 +1,88 @@
+---
+sidebar_position: 1
+---
+
+# From WP to Laravel/Xenforo ecosystem
+
+## Prerequisites
+
+- You must have a complete copy of the old WordPress/Xenforo ecosystem installation.
+- This copy must be on the same machine as the one where you want to perform the migration.
+- You must have configured access to both databases in the Laravel configuration.
+
+```ini title=".env"
+# Migration
+MIG_WP_DB_HOST=
+MIG_WP_DB_PORT=
+MIG_WP_DB_NAME=
+MIG_WP_DB_USERNAME=
+MIG_WP_DB_PASSWORD=
+
+MIG_XF_DB_HOST=
+MIG_XF_DB_PORT=
+MIG_XF_DB_NAME=
+MIG_XF_DB_USERNAME=
+MIG_XF_DB_PASSWORD=
+```
+
+- You must have configured access to the old XenForo database in the XenForo configuration.
+
+```php title="src/config.php"
+// Migration.
+$config['oldxfdb']['host'] = '';
+$config['oldxfdb']['port'] = '';
+$config['oldxfdb']['username'] = '';
+$config['oldxfdb']['password'] = '';
+$config['oldxfdb']['dbname'] = '';
+```
+
+- You must have the “XenForo Importers” plugin installed on your XenForo installation.
+- Your Laravel table must be available on XenForo and up to date with the migrations.
+- You must enable the following in XenForo's options: ``Setup -> Options -> RomhackPlaza Options -> Enable migration functions``.
+
+## 1. Migrate users
+
+The user migration will merge the user data from each database to recreate Xenforo users.
+
+- Users with the same email address or the same ``xf_user_id`` field in WordPress will have their account data merged.
+- For these accounts, the metadata from WordPress will take precedence.
+- If an account exists on only one of the two platforms, it will be retained.
+
+To get started, in Laravel, run the command to configure the roles table and map WordPress roles to both the old and new XenForo roles.
+
+```bash
+php artisan migrate:users:configure
+```
+
+You will be asked to map each WordPress role to the corresponding new XenForo role ID.
+If you want to add new WordPress roles, you can modify the command's ``getRoles`` function.
+
+```php title="app/Console/Commands/MigrateUsersConfigure.php"
+    private function getWpRoles(): array
+    {
+        $wpRoles = ['administrator', 'editor', 'author', 'contributor', 'subscriber'];
+        $customWpRoles = ['bot']; // <-- Edit here
+
+        return array_merge($wpRoles, $customWpRoles);
+    }
+```
+
+Once you've completed this step, you'll be able to create the user mapping table and merge the accounts.
+
+```bash
+php artisan migrate:users:plan {--fresh}
+```
+The ``--fresh`` option clears the table before performing the operation.
+
+Most cases will be resolved. If you only have an email address for the user or in other cases, the data will be placed on hold.
+
+You will need to approve each of the remaining records in the Laravel database, in the ``migration_user_plan`` table, by setting the ``status`` column to ``approved`` or ``rejected``.
+
+After sorting through the entries in the ``migration_user_plan`` table, you can start the user migration.
+
+```bash
+php artisan migrate:users:execute {--limit} {--wp-uploads-path} {--xf-data-path}
+```
+
+You must specify the path to both data folders: the WordPress folder ``wp-content/uploads`` and the XenForo ``data`` folder. This will allow the system to retrieve profile pictures and banners, among other things.
+The ``--limit`` option allows you to run a test on a few users, using the number you have specified.
